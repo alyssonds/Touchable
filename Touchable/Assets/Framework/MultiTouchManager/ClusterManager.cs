@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Assets.Framework.TokenEngine;
 
 namespace Assets.Framework.MultiTouchManager
 {
@@ -10,22 +11,21 @@ namespace Assets.Framework.MultiTouchManager
     {
         #region Events
 
-        public event EventHandler<ClusterUpdateEventArgs> ClustersToIdentifyHandler;
-        public event EventHandler<ClusterUpdateEventArgs> ClustersMovedHandler;
-        public event EventHandler<ClusterUpdateEventArgs> ClustersCancelledHandler;
+        public event EventHandler<ClusterUpdateEventArgs> ClustersToIdentifyEvent;
+        public event EventHandler<ClusterUpdateEventArgs> ClustersMovedEvent;
+        public event EventHandler<ClusterUpdateEventArgs> ClustersCancelledEvent;
 
         #endregion 
-        #region Private properties
-        private static ClusterManager _instance;
+        
+        #region Private Fields
+        private static readonly ClusterManager _instance = new ClusterManager();
         private Dictionary<String,Cluster> clusters = new Dictionary<String, Cluster>();
 
         private List<Cluster> ClustersToIdentify = new List<Cluster>();
         private List<Cluster> IdentifiedClustersMoved = new List<Cluster>();
-        private List<Cluster> IdentifiedClustersCancelled = new List<Cluster>();
+        private Dictionary<string, Cluster> IdentifiedClustersCancelled = new Dictionary<string, Cluster>();
 
-        private bool ClustersRequestIdentification = false;
-        private bool ClustersRequestMoved = false;
-        private bool ClustersRequestCancellation = false;
+        readonly object ClusterUpdateLock = new object();
 
         #endregion
 
@@ -34,8 +34,6 @@ namespace Assets.Framework.MultiTouchManager
         {
             get
             {
-                if (_instance == null)
-                    _instance = new ClusterManager();
                 return _instance;
             }
         }
@@ -51,12 +49,14 @@ namespace Assets.Framework.MultiTouchManager
         public float ClusterDistThreshold { get; private set; }
         #endregion 
 
-        public ClusterManager() { }
+        private ClusterManager() { }
 
         #region Public Methods
         public ClusterManager Initialize()
         {
             InputServer.Instance.InputUpdated += OnInputsUpdateEventHandler;
+            TokenManager.Instance.TokenIdentifiedEvent += OnTokenIdentified;
+            //TokenManager.Instance.TokenCancelledEvent += OnTokenCancelled;
             return _instance;
         }
 
@@ -122,8 +122,6 @@ namespace Assets.Framework.MultiTouchManager
                     {
                         minFound = false;
                         Cluster mergedCluster = MergeClusters(clustersList.ElementAt(mergeCluster1Index), clustersList.ElementAt(mergeCluster2Index));
-                        //clustersList.RemoveAt(mergeCluster1Index);
-                        //clustersList.RemoveAt(mergeCluster2Index);
                         clustersList.Remove(r1);
                         clustersList.Remove(r2);
                         clustersList.Add(mergedCluster);
@@ -138,6 +136,22 @@ namespace Assets.Framework.MultiTouchManager
 
         private Cluster MergeClusters(Cluster c1, Cluster c2)
         {
+            if (c1.State == ClusterState.Updated || c1.State == ClusterState.Identidied)
+            {
+                c1.SetCancelledClusterHash(c1.Hash);
+                c1.SetCancelledPointIds(c1.PointsIds);
+                c1.SetState(ClusterState.Cancelled);
+                IdentifiedClustersCancelled.Add(c1.Hash, c1);
+            }
+            if (c2.State == ClusterState.Updated || c2.State == ClusterState.Identidied)
+            {
+                c2.SetCancelledClusterHash(c2.Hash);
+                c2.SetCancelledPointIds(c2.PointsIds);
+                c2.SetState(ClusterState.Cancelled);
+                IdentifiedClustersCancelled.Add(c2.Hash, c2);
+
+            }
+
             List<TouchInput> allPoints = c1.Points.Values.ToList();
             allPoints.AddRange(c2.Points.Values.ToList());
 
@@ -149,38 +163,18 @@ namespace Assets.Framework.MultiTouchManager
             foreach(KeyValuePair<String,Cluster> entry in clusters)
             {
                 Cluster cluster = entry.Value;
-                String idHash = entry.Key;
                 switch (cluster.State)
                 {
                     case ClusterState.Unidentified:
                         {
                             //Cluster has reached for points and needs to be sent to identifier for check
                             ClustersToIdentify.Add(cluster);
-                            clusters[idHash].State = ClusterState.Identidied;
-                            ClustersRequestIdentification = true;
                             break;
                         }
                     case ClusterState.Updated:
                         {
                             //Identified cluster has moved
                             IdentifiedClustersMoved.Add(cluster);
-                            ClustersRequestMoved = true;
-                            break;
-                        }
-                    case ClusterState.Cancelled:
-                        {
-                            //Identified cluster was cancelled
-                            IdentifiedClustersCancelled.Add(cluster);
-                            ClustersRequestCancellation = true;
-                            break;
-                        }
-                    case ClusterState.Invalid:
-                        {
-                            //This cluster is only made of finger touch points
-                            foreach(KeyValuePair<int,TouchInput> record in cluster.Points)
-                            {
-                                InputManager.AddFingerTouch(record.Value);
-                            }
                             break;
                         }
                 }
@@ -191,7 +185,11 @@ namespace Assets.Framework.MultiTouchManager
         {
             EventHandler<ClusterUpdateEventArgs> handler;
 
-            handler = ClustersToIdentifyHandler;
+            lock (ClusterUpdateLock)
+            {
+                handler = ClustersToIdentifyEvent;
+            }
+            
             if (handler != null)
             {
                 handler(this, e);
@@ -203,7 +201,11 @@ namespace Assets.Framework.MultiTouchManager
         {
             EventHandler<ClusterUpdateEventArgs> handler;
 
-            handler = ClustersMovedHandler;
+            lock (ClusterUpdateLock)
+            {
+                handler = ClustersMovedEvent;
+            }
+            
             if (handler != null)
             {
                 handler(this, e);
@@ -215,7 +217,11 @@ namespace Assets.Framework.MultiTouchManager
         {
             EventHandler<ClusterUpdateEventArgs> handler;
 
-            handler = ClustersCancelledHandler;
+            lock (ClusterUpdateLock)
+            {
+                handler = ClustersCancelledEvent;
+            }
+            
             if (handler != null)
             {
                 handler(this, e);
@@ -223,15 +229,11 @@ namespace Assets.Framework.MultiTouchManager
 
         }
 
-        private void ResetClustersRequests()
+        private void ResetClustersBuffers()
         {
             ClustersToIdentify.Clear();
             IdentifiedClustersMoved.Clear();
             IdentifiedClustersCancelled.Clear();
-
-            ClustersRequestIdentification = false;
-            ClustersRequestMoved = false;
-            ClustersRequestCancellation = false;
 
         }
         #endregion
@@ -242,25 +244,46 @@ namespace Assets.Framework.MultiTouchManager
           
             String clusterHash;
 
-            ResetClustersRequests();
-
+            ResetClustersBuffers();
+        
             foreach (int touchId in InternalTouches.CancelledTouchBuffer)
             {
                 clusterHash = GetClusterIdFromTouchPoint(touchId);
                 if (clusterHash != null)
                 {
+                    //Is a cluster with more than one point
                     if (clusters[clusterHash].PointsIds.Count > 1)
                     {
                         Cluster updatedCluster = clusters[clusterHash].RemovePoint(touchId);
+                        //Update Current state Clusters
                         clusters.Remove(clusterHash);
                         clusters.Add(updatedCluster.Hash, updatedCluster);
+
+                        //If State is Cancelled update CancelledCluster Buffer
+                        if (updatedCluster.State == ClusterState.Cancelled)
+                        {
+                            IdentifiedClustersCancelled.Remove(updatedCluster.CancelledClusterHash);
+                            IdentifiedClustersCancelled.Add(updatedCluster.CancelledClusterHash, updatedCluster);
+                        }
                     }
+                    //Is a cluster with only one point
                     else
+                    {
+                        //Update CancelledClusterBuffer
+                        Cluster cluster = clusters[clusterHash].RemovePoint(touchId);
+                        if(cluster.State == ClusterState.Cancelled)
+                        {
+                            IdentifiedClustersCancelled.Remove(cluster.CancelledClusterHash);
+                            IdentifiedClustersCancelled.Add(cluster.CancelledClusterHash, cluster);
+                        }
+                        
+                        //Remove cluster from current Clusters
                         clusters.Remove(clusterHash);
+                    }
+                        
                     
                 }
                 //Remove touch from fingers touch list
-                InputManager.RemoveFingerTouch(touchId);
 
             }
 
@@ -273,6 +296,13 @@ namespace Assets.Framework.MultiTouchManager
                     clusters.Remove(clusterHash);
                     clusters.Add(updatedCluster[0].Hash, updatedCluster[0]);
 
+                    if (updatedCluster[0].State == ClusterState.Cancelled)
+                    {
+                        IdentifiedClustersCancelled.Remove(updatedCluster[0].CancelledClusterHash);
+                        IdentifiedClustersCancelled.Add(updatedCluster[0].CancelledClusterHash, updatedCluster[0]);
+                    }
+
+                    //Its the case where a previous cluster gets separeted into two
                     if (updatedCluster[1] != null)
                         clusters.Add(updatedCluster[1].Hash, updatedCluster[1]);
 
@@ -298,30 +328,77 @@ namespace Assets.Framework.MultiTouchManager
 
                 CheckClustersUpdated();
 
-                if (ClustersRequestIdentification)
-                    OnClusterToIdentify(new ClusterUpdateEventArgs("Identification request", ClustersToIdentify));
+                if (IdentifiedClustersCancelled.Count > 0)
+                    OnClustersCancelled(new ClusterUpdateEventArgs("Moved cluster request", IdentifiedClustersCancelled.Values.ToList()));
 
-                if (ClustersRequestMoved)
+                if (IdentifiedClustersMoved.Count > 0)
                     OnClustersMoved(new ClusterUpdateEventArgs("Moved cluster request", IdentifiedClustersMoved));
 
-                if (ClustersRequestCancellation)
-                    OnClustersCancelled(new ClusterUpdateEventArgs("Moved cluster request", IdentifiedClustersCancelled)); 
+                if (ClustersToIdentify.Count > 0)
+                    OnClusterToIdentify(new ClusterUpdateEventArgs("Identification request", ClustersToIdentify));
 
+                
+                //Get points which are touches and not markers
+                InputManager.SetFingersCancelled(InternalTouches.CancelledTouchBuffer.ToArray());
+
+                foreach (Cluster c in clusters.Values)
+                {
+                    if(c.State == ClusterState.Invalid || c.State == ClusterState.Cancelled)
+                    {
+                        //This cluster is only made of finger touch points
+                        foreach (TouchInput touch in c.Points.Values)
+                        {
+                            InputManager.AddFingerTouch(touch);
+                        }
+
+                    }
+
+                }
             }
+
         }
 
+        private void OnTokenIdentified(object sender, InternalTokenIdentifiedEventArgs e)
+        {
+            if (e.Success)
+            {
+                clusters[e.TokenHashId].SetState(ClusterState.Identidied);
+                InputManager.SetFingersCancelled(clusters[e.TokenHashId].PointsIds.ToArray());
+            }
+            else
+            {
+                clusters[e.TokenHashId].SetState(ClusterState.Invalid);
+            }
+        }
         
+        private void OnTokenCancelled(object sender, InternalTokenCancelledEventArgs e)
+        {
+            //clusters[e.TokenHashId].SetState(ClusterState.Invalid);
+
+            //Add these to FingerTouches
+            //Cluster c = clusters[e.TokenHashId];
+            //foreach (KeyValuePair<int, TouchInput> record in c.Points)
+            //{
+            //    InputManager.AddFingerTouch(record.Value);
+            //}
+        }
         #endregion
     }
 
+    //TODO eventual customized event args for cancelled cluster in which put also the index of the touch point cancelled
+
+    /// <summary>
+    /// 
+    /// </summary>
     internal class ClusterUpdateEventArgs : EventArgs
     {
-        public string EventMsg { get; private set; }
-        private List<Cluster> _updatedClusters = new List<Cluster>();
+        internal string EventMsg { get { return _eventMsg; } }
 
-        public ClusterUpdateEventArgs(string msg, List<Cluster> clusters)
+        private List<Cluster> _updatedClusters = new List<Cluster>();
+        private string _eventMsg;
+        internal ClusterUpdateEventArgs(string msg, List<Cluster> clusters)
         {
-            this.EventMsg = msg;
+            this._eventMsg = msg;
             this._updatedClusters = clusters;
         }
 

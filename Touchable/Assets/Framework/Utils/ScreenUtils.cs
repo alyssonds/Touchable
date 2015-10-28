@@ -11,7 +11,7 @@ namespace Assets.Framework.Utils
     internal static class ScreenUtils
     {
         /// <summary>
-        /// Converts pixels value to centimeters according to screen dpi through Unity's Screen.dpi
+        /// Converts pixels value to centimeters according to screen dpi through Unity's Screen. <seealso cref="Screen"/>
         /// </summary>
         /// <param name="pxValue">Value in pixels</param>
         /// <returns>Equivalent value in centimeters</returns>
@@ -21,7 +21,7 @@ namespace Assets.Framework.Utils
         }
 
         /// <summary>
-        /// Converts centimeters value to pixels according to screen dpi through Unity's Screen.dpi
+        /// Converts centimeters value to pixels according to screen dpi through Unity's Screen.dpi. <seealso cref="Screen"/>
         /// </summary>
         /// <param name="cmValue">Value in centimeters</param>
         /// <returns>Equivalente value in pixels</returns>

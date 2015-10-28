@@ -13,7 +13,7 @@ namespace Assets.Framework.MultiTouchManager
 
         #region Private Properties
 
-        private static InputServer _Instance;
+        private static readonly InputServer _instance = new InputServer();
         private bool UpdatedInputs = false;
 
         readonly object UpdateInputsLock = new object();
@@ -29,9 +29,7 @@ namespace Assets.Framework.MultiTouchManager
         {
             get
             {
-                if (_Instance == null)
-                    _Instance = new InputServer();
-                return _Instance;
+                return _instance;
             }
         }
 

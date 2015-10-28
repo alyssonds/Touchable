@@ -42,5 +42,17 @@ namespace Assets.Framework
             this._position = t.Position;
             this._state = t.State;
         }
+
+        internal void Update(TouchInput t)
+        {
+            this._id = t.Id;
+            this._position = t.Position;
+            this._state = t.State;
+        } 
+
+        internal void SetState(TouchState newState)
+        {
+            this._state = newState;
+        }
     }
 }
