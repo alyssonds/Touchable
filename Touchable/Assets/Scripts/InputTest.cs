@@ -2,6 +2,7 @@
 using System.Collections;
 using Assets.Framework.MultiTouchManager;
 using Assets.Framework.TokenEngine;
+using Assets.Framework.Utils;
 using Assets.Framework;
 using System.Collections.Generic;
 using System.Text;
@@ -107,7 +108,6 @@ public class InputTest : MonoBehaviour {
 
 
         //Debug.Log("TotClusters:" + clusters.Count + " Tokens: " + tokens.Count);
-
 
     }
 

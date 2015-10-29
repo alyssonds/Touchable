@@ -38,6 +38,7 @@ namespace Assets.Framework.TokenEngine
             InternalToken token = null;
             //Cluster identification Algorithm
             Dictionary<int, TouchInput> clusterPoints = cluster.Points;
+            TokenMarker[] meanSquaredTokenReferenceSystem;
 
             /*Ordered indexes of markers 0 => Origin 
             *                            1 => X axis 
@@ -66,6 +67,12 @@ namespace Assets.Framework.TokenEngine
                     //Compute Mean Square Problem for reference System
 
                     Dictionary<int, TokenMarker> markers = TokenUtils.ConvertTouchInputToMarkers(orderedIndexes, clusterPoints);
+
+                    float tokenSize = ScreenUtils.CmToPixels(1.8f);
+                    meanSquaredTokenReferenceSystem = TokenUtils.MeanSquareOrthogonalReferenceSystem(markers[orderedIndexes[0]], 
+                                                                                                     markers[orderedIndexes[1]], 
+                                                                                                     markers[orderedIndexes[2]], 
+                                                                                                     tokenSize);
 
                     //Create Token
                     token = new InternalToken(cluster.Hash, markers);

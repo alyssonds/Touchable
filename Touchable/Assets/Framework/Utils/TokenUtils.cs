@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using Assets.Framework.TokenEngine;
 using Assets.Framework.MultiTouchManager;
+using MathNet.Numerics.LinearAlgebra;
+
+using UnityEngine;
 
 namespace Assets.Framework.Utils
 {
@@ -46,6 +49,47 @@ namespace Assets.Framework.Utils
                         }
                 }
             }
+
+            return result;
+        }
+
+        public static TokenMarker[] MeanSquareOrthogonalReferenceSystem(TokenMarker originalOrigin, TokenMarker originalXAxis, TokenMarker originalYAxis, float tokenSize)
+        {
+            TokenMarker[] result = new TokenMarker[3];
+            var M= Matrix<float>.Build;
+
+
+            float[,] arrayA = { { 0.0f, 0.0f, 1.0f, 0.0f },
+                              { 0.0f, 0.0f, 0.0f, 1.0f },
+                              { tokenSize, 0.0f, 1.0f, 0.0f },
+                              { 0.0f, tokenSize, 0.0f, 1.0f },
+                              { 0.0f, -tokenSize, 1.0f, 0.0f},
+                              { tokenSize, 0.0f, 0.0f, 1.0f } };
+
+            float[,] arrayB = { { originalOrigin.Position.x },
+                                { originalOrigin.Position.y },
+                                { originalXAxis.Position.x },
+                                { originalXAxis.Position.y },
+                                { originalYAxis.Position.x },
+                                { originalYAxis.Position.y} };
+
+            var A = M.DenseOfArray(arrayA);
+            var b = M.DenseOfArray(arrayB);
+
+            var x = A.TransposeThisAndMultiply(A).Inverse() * A.TransposeThisAndMultiply(b);
+
+            float[,] transformationMatrix = x.ToArray();
+
+            Vector2 newOrigin = new Vector2( transformationMatrix[2, 0], 
+                                             transformationMatrix[3, 0]);
+            Vector2 newXAxis = new Vector2( tokenSize * transformationMatrix[0,0] + transformationMatrix[2,0],
+                                            tokenSize * transformationMatrix[1,0] + transformationMatrix[3,0]);
+            Vector2 newYAxis = new Vector2(-tokenSize * transformationMatrix[1, 0] + transformationMatrix[2, 0],
+                                             tokenSize * transformationMatrix[0, 0] + transformationMatrix[3, 0]);
+
+            result[0] = new TokenMarker(originalOrigin.Id, newOrigin, originalOrigin.State, MarkerType.Origin);
+            result[1] = new TokenMarker(originalXAxis.Id, newXAxis, originalXAxis.State, MarkerType.XAxis);
+            result[2] = new TokenMarker(originalYAxis.Id, newYAxis, originalYAxis.State, MarkerType.YAxis);
 
             return result;
         }

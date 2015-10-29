@@ -14,7 +14,6 @@ namespace Assets.Framework.MultiTouchManager
         #region Private Properties
 
         private static readonly InputServer _instance = new InputServer();
-        private bool UpdatedInputs = false;
 
         readonly object UpdateInputsLock = new object();
 
