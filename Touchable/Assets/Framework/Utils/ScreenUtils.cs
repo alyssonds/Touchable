@@ -25,9 +25,9 @@ namespace Assets.Framework.Utils
         /// </summary>
         /// <param name="cmValue">Value in centimeters</param>
         /// <returns>Equivalente value in pixels</returns>
-        public static int CmToPixels(float cmValue)
+        public static float CmToPixels(float cmValue)
         {
-            return (int) ((cmValue * Screen.dpi) / 2.54f);
+            return ((cmValue * Screen.dpi) / 2.54f);
         }
     }
 }

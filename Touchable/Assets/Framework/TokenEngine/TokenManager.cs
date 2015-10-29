@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.Framework.MultiTouchManager;
+using Assets.Framework.TokenEngine.TokenTypes;
 
 namespace Assets.Framework.TokenEngine
 {
@@ -22,7 +23,11 @@ namespace Assets.Framework.TokenEngine
 
         private Dictionary<string, InternalToken> tokens = new Dictionary<string, InternalToken>();
 
+        internal static TokenType CurrentTokenType;
+
         readonly object TokenCallBackLock = new object();
+
+
 
         #endregion
 
@@ -58,6 +63,11 @@ namespace Assets.Framework.TokenEngine
             ClusterManager.Instance.ClustersCancelledEvent += OnClustersCancelled;
 
             return _instance;
+        }
+
+        public void SetApplicationTokenType(TokenType t)
+        {
+            CurrentTokenType = t;
         }
 
         #endregion
