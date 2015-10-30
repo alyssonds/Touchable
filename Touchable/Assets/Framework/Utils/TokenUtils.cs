@@ -93,5 +93,26 @@ namespace Assets.Framework.Utils
 
             return result;
         }
+
+        public static Vector2 ComputeRotoTranslation(Vector2 originalPosition, Vector2 newOriginPosition, float angleRad)
+        {
+            var M = Matrix<float>.Build;
+            var v = Vector<float>.Build;
+            float angleCos = Mathf.Cos(angleRad);
+            float angleSin = Mathf.Sin(angleRad);
+
+            float[,] rotation = { { angleCos , angleSin },
+                                  { -angleSin, angleCos }};
+
+            float[] translation = { originalPosition.x - newOriginPosition.x, originalPosition.y - newOriginPosition.y };
+
+            var R = M.DenseOfArray(rotation);
+            var T = v.DenseOfArray(translation);
+
+            float[] result = (R * T).ToArray();
+
+            return new Vector2(result[0], result[1]);
+
+        }
     }
 }

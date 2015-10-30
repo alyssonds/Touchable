@@ -33,9 +33,20 @@ namespace Assets.Framework
             }
         }
 
+        public static void AddToken(Token t)
+        {
+            _tokens[t.Id] = t;
+        }
+
         public static Token GetToken(int id)
         {
             return _tokens[id];
+        }
+
+        public static void RemoveToken(int id)
+        {
+            if (_tokens.ContainsKey(id))
+                _tokens.Remove(id);
         }
 
         public static int FingersCount()

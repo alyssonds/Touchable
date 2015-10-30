@@ -15,6 +15,10 @@ namespace Assets.Framework.TokenEngine
         #region Events
         internal event EventHandler<InternalTokenIdentifiedEventArgs> TokenIdentifiedEvent;
         internal event EventHandler<InternalTokenCancelledEventArgs> TokenCancelledEvent;
+
+        internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen;
+        internal event EventHandler<ApplicationTokenEventArgs> ScreenTokenUpdated;
+        internal event EventHandler<ApplicationTokenEventArgs> TokenRemovedFromScreen;
         #endregion
 
         #region Private Fields
@@ -22,6 +26,7 @@ namespace Assets.Framework.TokenEngine
         private static readonly TokenManager _instance = new TokenManager();
 
         private Dictionary<string, InternalToken> tokens = new Dictionary<string, InternalToken>();
+        private HashSet<int> tokenIds = new HashSet<int>();
 
         internal static TokenType CurrentTokenType;
 
@@ -72,6 +77,21 @@ namespace Assets.Framework.TokenEngine
 
         #endregion
 
+        #region Private Methods
+
+        private int GetFirstAvailableTokenId()
+        {
+            int defValue = 0;
+            for (int i = 0; i < int.MaxValue; i++)
+            {
+                if (!tokenIds.Contains(i))
+                    return i;
+            }
+            return defValue;
+        }
+
+        #endregion
+
         #region Event Handlers
 
         private void OnClustersToIdentify(object sender, ClusterUpdateEventArgs e)
@@ -83,20 +103,30 @@ namespace Assets.Framework.TokenEngine
                 
                 if(token != null)
                 {
+                    //Calculate TokenClass
+                    token.ComputeTokenClass(ClassComputeReferenceSystem.MeanSqure, ClassComputeDimension.Pixels);
                     //Cluster Identification succesfull
-                    //Add new token here 
+                    //Set Token ID
+                    token.SetTokenId(GetFirstAvailableTokenId());
+                    tokenIds.Add(token.Id);
+
+                    //Add Token to internal List
                     tokens.Add(token.HashId, token);
+
                     //Add Token To Global List
+                    InputManager.AddToken(new Token(token));                 
+
+                    //Notify CM cluster has been identified
+                    LaunchTokenIdentified(new InternalTokenIdentifiedEventArgs(token.HashId,true));
 
                     //Fire event token identified
-                    
-                    //Notify CM cluster has been identified
-                    FireTokenIdentified(new InternalTokenIdentifiedEventArgs(token.HashId,true));
+                    LaunchTokenPlacedOnScreen(new ApplicationTokenEventArgs(new Token(token)));
+
                 }
                 else
                 {
                     //Cluser Identification failed, need to report back to CM
-                    FireTokenIdentified(new InternalTokenIdentifiedEventArgs(cluster.Hash, false));
+                    LaunchTokenIdentified(new InternalTokenIdentifiedEventArgs(cluster.Hash, false));
 
                 }
             }
@@ -107,13 +137,19 @@ namespace Assets.Framework.TokenEngine
             foreach(Cluster cluster in e.GetClusters())
             {
                 //Update internally the token
-                InternalToken token;
-                if(tokens.TryGetValue(cluster.Hash,out token))
+                InternalToken internalToken;
+                if(tokens.TryGetValue(cluster.Hash,out internalToken))
                 {
-                    token.Update(cluster);
+                    internalToken.Update(cluster);
                     tokens.Remove(cluster.Hash);
-                    tokens.Add(token.HashId, token);
+                    tokens.Add(internalToken.HashId, internalToken);
+
+                    //Update Global Token
+                    InputManager.GetToken(internalToken.Id).UpdateToken(internalToken);
+
                     //Here check deltas in order to fire or not Events
+                    LaunchScreenTokenUpdated(new ApplicationTokenEventArgs(new Token(internalToken)));
+
                 }
             }
         }
@@ -124,11 +160,19 @@ namespace Assets.Framework.TokenEngine
             {
                 //Cancle cluster according to point
                 //Here is very delicate because it must be considered also the possibility of not removing the token untill not all points have been removed
-
-                if (tokens.ContainsKey(cluster.CancelledClusterHash))
+                InternalToken token;
+                if (tokens.TryGetValue(cluster.CancelledClusterHash, out token))
                 {
+                    tokenIds.Remove(token.Id);
+                    InputManager.RemoveToken(token.Id);
+
                     tokens.Remove(cluster.CancelledClusterHash);
-                    FireTokenCancelled(new InternalTokenCancelledEventArgs(cluster.Hash));
+
+                    //Launch CallBack to CM
+                    LaunchTokenCancelled(new InternalTokenCancelledEventArgs(cluster.Hash));
+
+                    //Lauch Application Token Cancelled
+                    LaunchTokenRemovedFromScreen(new ApplicationTokenEventArgs(new Token(token)));
                 }
 
             }
@@ -138,7 +182,7 @@ namespace Assets.Framework.TokenEngine
 
         #region Event Launchers
 
-        private void FireTokenIdentified(InternalTokenIdentifiedEventArgs e)
+        private void LaunchTokenIdentified(InternalTokenIdentifiedEventArgs e)
         {
             EventHandler<InternalTokenIdentifiedEventArgs> handler;
 
@@ -152,7 +196,7 @@ namespace Assets.Framework.TokenEngine
             }
         }
 
-        private void FireTokenCancelled(InternalTokenCancelledEventArgs e)
+        private void LaunchTokenCancelled(InternalTokenCancelledEventArgs e)
         {
             EventHandler<InternalTokenCancelledEventArgs> handler;
             lock (TokenCallBackLock)
@@ -161,6 +205,48 @@ namespace Assets.Framework.TokenEngine
             }
             
             if(handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        private void LaunchTokenPlacedOnScreen(ApplicationTokenEventArgs e)
+        {
+            EventHandler<ApplicationTokenEventArgs> handler;
+            lock (TokenCallBackLock)
+            {
+                handler = TokenPlacedOnScreen;
+            }
+
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        private void LaunchScreenTokenUpdated(ApplicationTokenEventArgs e)
+        {
+            EventHandler<ApplicationTokenEventArgs> handler;
+            lock (TokenCallBackLock)
+            {
+                handler = ScreenTokenUpdated;
+            }
+
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        private void LaunchTokenRemovedFromScreen(ApplicationTokenEventArgs e)
+        {
+            EventHandler<ApplicationTokenEventArgs> handler;
+            lock (TokenCallBackLock)
+            {
+                handler = TokenRemovedFromScreen;
+            }
+
+            if (handler != null)
             {
                 handler(this, e);
             }
@@ -192,6 +278,17 @@ namespace Assets.Framework.TokenEngine
         internal InternalTokenCancelledEventArgs(string tokenHashId)
         {
             this._tokenHashId = tokenHashId;
+        }
+    }
+
+    public class ApplicationTokenEventArgs : EventArgs
+    {
+        private Token _token;
+        public Token Token { get { return _token; } }
+
+        internal ApplicationTokenEventArgs(Token token)
+        {
+            this._token = token;
         }
     }
 }

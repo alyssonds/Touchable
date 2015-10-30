@@ -14,8 +14,9 @@ public class InputTest : MonoBehaviour {
     private GameObject[] circles;
     private GameObject[] fingerCircles;
     private List<Cluster> clusters;
-    private List<InternalToken> tokens;
+    private List<Token> tokens;
     private List<FingerTouch> fingers;
+    private float tokenAngle;
 
 	// Use this for initialization
 	void Start () {
@@ -77,7 +78,7 @@ public class InputTest : MonoBehaviour {
         //    circles[i].SetActive(false);
         //}
 
-        tokens = TokenManager.Instance.Tokens;
+        tokens = InputManager.Tokens;
 
         for (int i = 0; i < tokens.Count; i++)
         {
@@ -86,6 +87,7 @@ public class InputTest : MonoBehaviour {
             Vector3 dst = Camera.main.ScreenToWorldPoint(dstScreen);
             dst.z = -9.7f;
             circles[i].transform.position = dst;
+            tokenAngle = tokens[i].Angle;
         }
         for (int i = tokens.Count; i < circles.Length; i++)
         {
@@ -111,6 +113,18 @@ public class InputTest : MonoBehaviour {
 
     }
 
+    void OnGUI()
+    {
+        Rect rect = new Rect(Screen.width - 200, Screen.height - 10, 150, 30);
+        GUIStyle style = new GUIStyle();
+
+        style.fontSize = 20;
+        float angle = tokenAngle;
+        string txt = "Angle: " + angle;
+        GUI.Label(rect,txt,style);
+
+
+    }
     //private void OnInputsUpdated(object sender, InputUpdateEventArgs e)
     //{
     //    //Debug.Log("Inputs: " + InternalTouches.List.Count + " B: " + InternalTouches.BaganTouhBuffer.Count + " M: " + InternalTouches.MovedTouchBuffer.Count + " C: " + InternalTouches.CancelledTouchBuffer.Count);

@@ -19,7 +19,7 @@ namespace Assets.Framework.TokenEngine
         /// <summary>
         /// Token Class 
         /// </summary>
-        int Class { get; }
+        int? Class { get; }
 
         /// <summary>
         /// Token Position in screen coordinates with respect to its center
@@ -40,10 +40,6 @@ namespace Assets.Framework.TokenEngine
         /// Token angle variation since last frame
         /// </summary>
         float DeltaAngle { get; }
-
-
-
-
 
     }
 }

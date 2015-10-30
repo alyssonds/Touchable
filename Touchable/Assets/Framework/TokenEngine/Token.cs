@@ -10,7 +10,7 @@ namespace Assets.Framework.TokenEngine
     {
         #region Private Properties
         private int _id;
-        private int _class;
+        private int? _class;
         private Vector2 _position;
         private Vector2 _deltaPosition;
         private float _angle;
@@ -21,7 +21,7 @@ namespace Assets.Framework.TokenEngine
         public int Id { get { return _id; } }
 
         /// <inheritdoc />
-        public int Class { get { return _class; } }
+        public int? Class { get { return _class; } }
 
         /// <inheritdoc />
         public Vector2 Position { get { return _position; } }
@@ -43,7 +43,18 @@ namespace Assets.Framework.TokenEngine
             this._class = internalToken.Class;
             this._position = internalToken.Position;
             this._angle = internalToken.Angle;
+            this._deltaAngle = internalToken.DeltaAngle;
+            this._deltaPosition = internalToken.DeltaPosition;
             
+        }
+
+        internal void UpdateToken(InternalToken internalToken)
+        {
+            this._position = internalToken.Position;
+            this._angle = internalToken.Angle;
+            this._deltaAngle = internalToken.DeltaAngle;
+            this._deltaPosition = internalToken.DeltaPosition;
+
         }
     }
 }

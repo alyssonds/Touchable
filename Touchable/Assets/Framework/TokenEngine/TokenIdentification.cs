@@ -68,16 +68,14 @@ namespace Assets.Framework.TokenEngine
 
                     Dictionary<int, TokenMarker> markers = TokenUtils.ConvertTouchInputToMarkers(orderedIndexes, clusterPoints);
 
-                    float tokenSize = ScreenUtils.CmToPixels(1.8f);
                     meanSquaredTokenReferenceSystem = TokenUtils.MeanSquareOrthogonalReferenceSystem(markers[orderedIndexes[0]],
                                                                                                      markers[orderedIndexes[1]],
                                                                                                      markers[orderedIndexes[2]],
-                                                                                                     TokenManager.CurrentTokenType.DistanceOriginAxisMarkers);
+                                                                                                     TokenManager.CurrentTokenType.DistanceOriginAxisMarkersPX);
 
                     //Create Token
                     token = new InternalToken(cluster.Hash, markers);
-                    //Update its properties
-                    token.UpdateAngle();
+                    token.SetMeanSquareReferenceSystem(meanSquaredTokenReferenceSystem);
                 }
             }
             else

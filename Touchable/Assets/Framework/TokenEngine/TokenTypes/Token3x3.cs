@@ -18,5 +18,32 @@ namespace Assets.Framework.TokenEngine.TokenTypes
         {
             return ScreenUtils.CmToPixels(TokenAttributes.TOKEN_3X3_ORIGIN_TO_CENTER_DST);
         }
+
+        internal override float SetDataMarkerOriginPosition()
+        {
+            return ScreenUtils.CmToPixels(TokenAttributes.TOKEN_3X3_DATA_MARKER_ORIGIN);
+        }
+
+        internal override float SetDataMarkerOriginPositionCM()
+        {
+            return TokenAttributes.TOKEN_3X3_DATA_MARKER_ORIGIN;
+        }
+
+        internal override Dictionary<TokenDataGridCoord, int> InitiliazeTokenClassLUT()
+        {
+            Dictionary<TokenDataGridCoord, int> classLUT = new Dictionary<TokenDataGridCoord, int>();
+
+            classLUT.Add(new TokenDataGridCoord(0, 0), 0);
+            classLUT.Add(new TokenDataGridCoord(0, 1), 1);
+            classLUT.Add(new TokenDataGridCoord(0, 2), 2);
+            classLUT.Add(new TokenDataGridCoord(1, 0), 3);
+            classLUT.Add(new TokenDataGridCoord(1, 1), 4);
+            classLUT.Add(new TokenDataGridCoord(1, 2), 5);
+            classLUT.Add(new TokenDataGridCoord(2, 0), 6);
+            classLUT.Add(new TokenDataGridCoord(2, 1), 7);
+            classLUT.Add(new TokenDataGridCoord(-1, -1), 8);
+
+            return classLUT;
+        }
     }
 }
