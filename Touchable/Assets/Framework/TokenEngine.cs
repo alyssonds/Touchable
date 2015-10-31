@@ -2,13 +2,22 @@
 using System.Collections;
 using Assets.Framework.TokenEngine;
 using Assets.Framework.TokenEngine.TokenTypes;
+using Assets.Framework.MultiTouchManager;
+using Assets.Framework;
 
 public class TokenEngine : MonoBehaviour
 {
-    public int TokenType;   
+    public int TokenType;
+    public float ClusterThreshold = 200f;
+    public bool Target60FPS = true;
+    public float MoveUpdateThreshold;
+    public float RotationUpdateThreshod; 
 
     void Awake()
     {
+        ClusterManager.Instance.Initialize().SetClusterDistThreshold(ClusterThreshold);
+        TokenManager.Instance.Initialize();
+
         switch (TokenType)
         {
             case 3:
@@ -21,17 +30,17 @@ public class TokenEngine : MonoBehaviour
                 TokenManager.Instance.SetApplicationTokenType(new Token5x5());
                 break;
         }
+
+        if (Target60FPS)
+            Application.targetFrameRate = 60;
         
     }
-
-    // Use this for initialization
     void Start()
     {
     }
-
-    // Update is called once per frame
     void Update()
     {
-
+        InputServer.Instance.Update();
+        InputManager.UpdateFingersCancelled();
     }
 }

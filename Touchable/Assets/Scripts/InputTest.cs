@@ -20,9 +20,6 @@ public class InputTest : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-
-        ClusterManager.Instance.Initialize().SetClusterDistThreshold(200f);
-        TokenManager.Instance.Initialize();
         circles = new GameObject[10];
 
         for(int i=0; i < 10; i++)
@@ -43,16 +40,12 @@ public class InputTest : MonoBehaviour {
 
         }
 
-        Application.targetFrameRate = 60;
-
     }
 	
 	// Update is called once per frame
 	void Update () {
 
         //int i = Touches.BeganTouches.Count;
-        InputServer.Instance.Update();
-        InputManager.UpdateFingersCancelled();
         //Debug.Log(ClusterDebug());
         //Debug.Log(""+ InputManager.FingersCount());
 

@@ -15,8 +15,23 @@ namespace Assets.Framework.TokenEngine
         #region Events
         internal event EventHandler<InternalTokenIdentifiedEventArgs> TokenIdentifiedEvent;
         internal event EventHandler<InternalTokenCancelledEventArgs> TokenCancelledEvent;
+        //internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen
 
-        internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen;
+        private Dictionary<int?, EventHandler<ApplicationTokenEventArgs>> TokenPlacesEventHandlers = new Dictionary<int?, EventHandler<ApplicationTokenEventArgs>>();
+        internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen
+        {
+            add
+            {
+                ApplicationToken sub = value.Target as ApplicationToken;
+                TokenPlacesEventHandlers.Add(sub.tokenClass, value);
+                TokenPlacedOnScreen += value;
+            }
+            remove
+            {
+
+            }
+
+        }
         internal event EventHandler<ApplicationTokenEventArgs> ScreenTokenUpdated;
         internal event EventHandler<ApplicationTokenEventArgs> TokenRemovedFromScreen;
         #endregion
@@ -213,15 +228,37 @@ namespace Assets.Framework.TokenEngine
         private void LaunchTokenPlacedOnScreen(ApplicationTokenEventArgs e)
         {
             EventHandler<ApplicationTokenEventArgs> handler;
+            List<Delegate> subscribers = new List<Delegate>();
+            List<EventHandler> handlers = new List<EventHandler>();
+
             lock (TokenCallBackLock)
             {
-                handler = TokenPlacedOnScreen;
+                //handler = TokenPlacedOnScreen;
+                //if (handler != null)
+                //{
+                //    subscribers = handler.GetInvocationList().ToList();
+                //    //handlers = handler.GetInvocationList().Cast<EventHandler>().ToList();
+                //}
+                if (TokenPlacesEventHandlers.TryGetValue(e.Token.Class, out handler))
+                    handler(this, e);
+
             }
 
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            //foreach(Delegate subscriber in subscribers)
+            //{
+            //    //EventHandler applicationHandler = subscriber.Method;
+            //    int? invokerTokenClass = e.Token.Class;
+            //    ApplicationToken applicationToken = subscriber.Target as ApplicationToken;
+            //    int subscriberTokenClass = applicationToken.tokenClass;
+
+            //    if (invokerTokenClass == subscriberTokenClass)
+            //        subscriber.Invoke();
+            //}
+
+            //if (handler != null)
+            //{
+            //    handler(this, e);
+            //}
         }
 
         private void LaunchScreenTokenUpdated(ApplicationTokenEventArgs e)
