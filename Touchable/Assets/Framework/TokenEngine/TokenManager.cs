@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using Assets.Framework.MultiTouchManager;
 using Assets.Framework.TokenEngine.TokenTypes;
+using Assets.Scripts;
 
 namespace Assets.Framework.TokenEngine
 {
@@ -15,23 +16,8 @@ namespace Assets.Framework.TokenEngine
         #region Events
         internal event EventHandler<InternalTokenIdentifiedEventArgs> TokenIdentifiedEvent;
         internal event EventHandler<InternalTokenCancelledEventArgs> TokenCancelledEvent;
-        //internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen
+        internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen;
 
-        private Dictionary<int?, EventHandler<ApplicationTokenEventArgs>> TokenPlacesEventHandlers = new Dictionary<int?, EventHandler<ApplicationTokenEventArgs>>();
-        internal event EventHandler<ApplicationTokenEventArgs> TokenPlacedOnScreen
-        {
-            add
-            {
-                ApplicationToken sub = value.Target as ApplicationToken;
-                TokenPlacesEventHandlers.Add(sub.tokenClass, value);
-                TokenPlacedOnScreen += value;
-            }
-            remove
-            {
-
-            }
-
-        }
         internal event EventHandler<ApplicationTokenEventArgs> ScreenTokenUpdated;
         internal event EventHandler<ApplicationTokenEventArgs> TokenRemovedFromScreen;
         #endregion
@@ -46,6 +32,12 @@ namespace Assets.Framework.TokenEngine
         internal static TokenType CurrentTokenType;
 
         readonly object TokenCallBackLock = new object();
+
+        private ClassComputeReferenceSystem ClassComputeRefSystem;
+        private ClassComputeDimension ClassComputeDimension;
+
+        private float TokenUpdateTranslationThreshold;
+        private float TokenUpdateRotationThreshold;
 
 
 
@@ -82,12 +74,40 @@ namespace Assets.Framework.TokenEngine
             ClusterManager.Instance.ClustersMovedEvent += OnClustersMoved;
             ClusterManager.Instance.ClustersCancelledEvent += OnClustersCancelled;
 
+
+
             return _instance;
         }
 
         public void SetApplicationTokenType(TokenType t)
         {
             CurrentTokenType = t;
+        }
+
+        public void SetClassComputeReferenceSystem(bool SetMeanSquare)
+        {
+            if (SetMeanSquare)
+                ClassComputeRefSystem = ClassComputeReferenceSystem.MeanSqure;
+            else
+                ClassComputeRefSystem = ClassComputeReferenceSystem.Regular;
+        }
+
+        public void SetClassComputeDimensions(bool SetPixels)
+        {
+            if (SetPixels)
+                ClassComputeDimension = ClassComputeDimension.Pixels;
+            else
+                ClassComputeDimension = ClassComputeDimension.Centimeters;
+        }
+
+        public void SetTokenUpdateTranslationThr(float value)
+        {
+            TokenUpdateTranslationThreshold = value;
+        }
+
+        public void SetTokenUpdateRotationThr(float value)
+        {
+            TokenUpdateRotationThreshold = value;
         }
 
         #endregion
@@ -105,6 +125,15 @@ namespace Assets.Framework.TokenEngine
             return defValue;
         }
 
+        private bool UpdateGreaterThanThreshold(InternalToken token)
+        {
+            if (Math.Abs(token.DeltaPosition.x) > TokenUpdateTranslationThreshold || Math.Abs(token.DeltaPosition.y) > TokenUpdateTranslationThreshold ||
+               Math.Abs(token.DeltaAngle) > TokenUpdateRotationThreshold)
+                return true;
+            else
+                return false;
+        }
+
         #endregion
 
         #region Event Handlers
@@ -119,7 +148,7 @@ namespace Assets.Framework.TokenEngine
                 if(token != null)
                 {
                     //Calculate TokenClass
-                    token.ComputeTokenClass(ClassComputeReferenceSystem.MeanSqure, ClassComputeDimension.Pixels);
+                    token.ComputeTokenClass(ClassComputeRefSystem, ClassComputeDimension);
                     //Cluster Identification succesfull
                     //Set Token ID
                     token.SetTokenId(GetFirstAvailableTokenId());
@@ -163,7 +192,8 @@ namespace Assets.Framework.TokenEngine
                     InputManager.GetToken(internalToken.Id).UpdateToken(internalToken);
 
                     //Here check deltas in order to fire or not Events
-                    LaunchScreenTokenUpdated(new ApplicationTokenEventArgs(new Token(internalToken)));
+                    if(UpdateGreaterThanThreshold(internalToken))
+                        LaunchScreenTokenUpdated(new ApplicationTokenEventArgs(new Token(internalToken)));
 
                 }
             }
@@ -229,41 +259,29 @@ namespace Assets.Framework.TokenEngine
         {
             EventHandler<ApplicationTokenEventArgs> handler;
             List<Delegate> subscribers = new List<Delegate>();
-            List<EventHandler> handlers = new List<EventHandler>();
+            int? invokerTokenClass = null;
 
             lock (TokenCallBackLock)
             {
-                //handler = TokenPlacedOnScreen;
-                //if (handler != null)
-                //{
-                //    subscribers = handler.GetInvocationList().ToList();
-                //    //handlers = handler.GetInvocationList().Cast<EventHandler>().ToList();
-                //}
-                if (TokenPlacesEventHandlers.TryGetValue(e.Token.Class, out handler))
-                    handler(this, e);
-
+                handler = TokenPlacedOnScreen;
             }
 
-            //foreach(Delegate subscriber in subscribers)
-            //{
-            //    //EventHandler applicationHandler = subscriber.Method;
-            //    int? invokerTokenClass = e.Token.Class;
-            //    ApplicationToken applicationToken = subscriber.Target as ApplicationToken;
-            //    int subscriberTokenClass = applicationToken.tokenClass;
+            if (handler != null)
+            {
+                subscribers = handler.GetInvocationList().ToList();
+                invokerTokenClass = e.Token.Class;
+                DispatchEventToSubscribers(subscribers, invokerTokenClass,e);
+            }
 
-            //    if (invokerTokenClass == subscriberTokenClass)
-            //        subscriber.Invoke();
-            //}
-
-            //if (handler != null)
-            //{
-            //    handler(this, e);
-            //}
+            
         }
 
         private void LaunchScreenTokenUpdated(ApplicationTokenEventArgs e)
         {
             EventHandler<ApplicationTokenEventArgs> handler;
+            List<Delegate> subscribers = new List<Delegate>();
+            int? invokerTokenClass = null;
+
             lock (TokenCallBackLock)
             {
                 handler = ScreenTokenUpdated;
@@ -271,13 +289,18 @@ namespace Assets.Framework.TokenEngine
 
             if (handler != null)
             {
-                handler(this, e);
+                subscribers = handler.GetInvocationList().ToList();
+                invokerTokenClass = e.Token.Class;
+                DispatchEventToSubscribers(subscribers, invokerTokenClass, e);
             }
         }
 
         private void LaunchTokenRemovedFromScreen(ApplicationTokenEventArgs e)
         {
             EventHandler<ApplicationTokenEventArgs> handler;
+            List<Delegate> subscribers = new List<Delegate>();
+            int? invokerTokenClass = null;
+
             lock (TokenCallBackLock)
             {
                 handler = TokenRemovedFromScreen;
@@ -285,7 +308,24 @@ namespace Assets.Framework.TokenEngine
 
             if (handler != null)
             {
-                handler(this, e);
+                subscribers = handler.GetInvocationList().ToList();
+                invokerTokenClass = e.Token.Class;
+                DispatchEventToSubscribers(subscribers, invokerTokenClass, e);
+            }
+        }
+
+        private void DispatchEventToSubscribers(List<Delegate> subscribers, int? invokerTokenClass, ApplicationTokenEventArgs e)
+        {
+            foreach (Delegate subscriber in subscribers)
+            {
+                IApplicationToken applicationToken = subscriber.Target as IApplicationToken;
+                int subscriberTokenClass = applicationToken.TokenClass;
+
+                if (invokerTokenClass == subscriberTokenClass)
+                {
+                    EventHandler<ApplicationTokenEventArgs> subscriberHandler = subscriber as EventHandler<ApplicationTokenEventArgs>;
+                    subscriberHandler(this, e);
+                }
             }
         }
         #endregion

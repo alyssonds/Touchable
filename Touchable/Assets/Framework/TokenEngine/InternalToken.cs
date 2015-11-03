@@ -54,7 +54,7 @@ namespace Assets.Framework.TokenEngine
         private float _deltaAngle;
 
         //Token properties which are need for internal operations
-        HashSet<int> _markersIds = new HashSet<int>();
+        //HashSet<int> _markersIds = new HashSet<int>();
         Dictionary<int, TokenMarker> markers = new Dictionary<int, TokenMarker>();
         Dictionary<MarkerType, TokenMarker> typeMarkers = new Dictionary<MarkerType, TokenMarker>();
 

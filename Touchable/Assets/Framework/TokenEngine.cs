@@ -10,13 +10,19 @@ public class TokenEngine : MonoBehaviour
     public int TokenType;
     public float ClusterThreshold = 200f;
     public bool Target60FPS = true;
-    public float MoveUpdateThreshold;
-    public float RotationUpdateThreshod; 
+    public bool TokenManagerEnabled;
+
+    public bool MeanSquare;
+    public bool ComputePixels;
+
+    public float TranslationThr;
+    public float RotationThr;
 
     void Awake()
     {
         ClusterManager.Instance.Initialize().SetClusterDistThreshold(ClusterThreshold);
-        TokenManager.Instance.Initialize();
+        if(TokenManagerEnabled)
+            TokenManager.Instance.Initialize();
 
         switch (TokenType)
         {
@@ -30,6 +36,12 @@ public class TokenEngine : MonoBehaviour
                 TokenManager.Instance.SetApplicationTokenType(new Token5x5());
                 break;
         }
+
+        TokenManager.Instance.SetClassComputeReferenceSystem(MeanSquare);
+        TokenManager.Instance.SetClassComputeDimensions(ComputePixels);
+
+        TokenManager.Instance.SetTokenUpdateTranslationThr(TranslationThr);
+        TokenManager.Instance.SetTokenUpdateRotationThr(RotationThr);
 
         if (Target60FPS)
             Application.targetFrameRate = 60;
