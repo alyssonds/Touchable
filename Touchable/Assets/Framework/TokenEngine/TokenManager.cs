@@ -79,6 +79,16 @@ namespace Assets.Framework.TokenEngine
             return _instance;
         }
 
+        public TokenManager Disable()
+        {
+            ClusterManager.Instance.ClustersToIdentifyEvent -= OnClustersToIdentify;
+            ClusterManager.Instance.ClustersMovedEvent -= OnClustersMoved;
+            ClusterManager.Instance.ClustersCancelledEvent -= OnClustersCancelled;
+
+            return this;
+
+        }
+
         public void SetApplicationTokenType(TokenType t)
         {
             CurrentTokenType = t;

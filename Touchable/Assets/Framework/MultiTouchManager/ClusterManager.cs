@@ -63,6 +63,7 @@ namespace Assets.Framework.MultiTouchManager
         public void Disable()
         {
             InputServer.Instance.InputUpdated -= OnInputsUpdateEventHandler;
+            TokenManager.Instance.TokenIdentifiedEvent -= OnTokenIdentified;
         }
 
         public void SetClusterDistThreshold(float threshold)

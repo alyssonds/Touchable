@@ -20,6 +20,7 @@ public class TokenEngine : MonoBehaviour
 
     void Awake()
     {
+        Debug.Log("Token Engine Awake");
         ClusterManager.Instance.Initialize().SetClusterDistThreshold(ClusterThreshold);
         if(TokenManagerEnabled)
             TokenManager.Instance.Initialize();
@@ -55,4 +56,19 @@ public class TokenEngine : MonoBehaviour
         InputServer.Instance.Update();
         InputManager.UpdateFingersCancelled();
     }
+
+    void OnDisable()
+    {
+        Debug.Log("Token Engine Disabled");
+        ClusterManager.Instance.Disable();
+        if (TokenManagerEnabled)
+            TokenManager.Instance.Disable();
+    }
+
+    void OnDestroy()
+    {
+        Debug.Log("Token On Destroy");
+    }
+
+
 }

@@ -443,8 +443,7 @@ MonoBehaviour:
   TokenType: 3
   ClusterThreshold: 200
   Target60FPS: 1
-  MoveUpdateThreshold: 0
-  RotationUpdateThreshod: 0
+  TokenManagerEnabled: 1
   MeanSquare: 0
   ComputePixels: 0
   TranslationThr: 0
