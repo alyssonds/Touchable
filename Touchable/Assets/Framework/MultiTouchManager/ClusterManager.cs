@@ -294,15 +294,18 @@ namespace Assets.Framework.MultiTouchManager
                 if (clusterHash != null)
                 {
                     Cluster[] updatedCluster = clusters[clusterHash].UpdatePoint(touchId);
-                    clusters.Remove(clusterHash);
-                    clusters.Add(updatedCluster[0].Hash, updatedCluster[0]);
-
-                    if (updatedCluster[0].State == ClusterState.Cancelled)
+                    
+                        clusters.Remove(clusterHash);
+                    if (updatedCluster[0].Points.Count != 0)
                     {
-                        IdentifiedClustersCancelled.Remove(updatedCluster[0].CancelledClusterHash);
-                        IdentifiedClustersCancelled.Add(updatedCluster[0].CancelledClusterHash, updatedCluster[0]);
+                        clusters.Add(updatedCluster[0].Hash, updatedCluster[0]);
+                        if (updatedCluster[0].State == ClusterState.Cancelled)
+                        {
+                            IdentifiedClustersCancelled.Remove(updatedCluster[0].CancelledClusterHash);
+                            IdentifiedClustersCancelled.Add(updatedCluster[0].CancelledClusterHash, updatedCluster[0]);
+                        }
                     }
-
+                    
                     //Its the case where a previous cluster gets separeted into two
                     if (updatedCluster[1] != null)
                         clusters.Add(updatedCluster[1].Hash, updatedCluster[1]);

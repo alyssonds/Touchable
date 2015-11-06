@@ -8,6 +8,7 @@ using System.Text;
 using Assets.Framework.MultiTouchManager;
 using Assets.Framework.TokenEngine.TokenTypes;
 using Assets.Scripts;
+using Assets.Framework.Utils;
 
 namespace Assets.Framework.TokenEngine
 {
@@ -38,6 +39,8 @@ namespace Assets.Framework.TokenEngine
 
         private float TokenUpdateTranslationThreshold;
         private float TokenUpdateRotationThreshold;
+
+        private TokenStatistics tokenStatistics;
 
 
 
@@ -74,6 +77,10 @@ namespace Assets.Framework.TokenEngine
             ClusterManager.Instance.ClustersMovedEvent += OnClustersMoved;
             ClusterManager.Instance.ClustersCancelledEvent += OnClustersCancelled;
 
+            ClusterManager.Instance.SetClusterDistThreshold(CurrentTokenType.TokenDiagonalPX);
+
+            tokenStatistics = TokenStatistics.Instance;
+
 
 
             return _instance;
@@ -84,6 +91,8 @@ namespace Assets.Framework.TokenEngine
             ClusterManager.Instance.ClustersToIdentifyEvent -= OnClustersToIdentify;
             ClusterManager.Instance.ClustersMovedEvent -= OnClustersMoved;
             ClusterManager.Instance.ClustersCancelledEvent -= OnClustersCancelled;
+
+            tokenStatistics.ResetMetrics();
 
             return this;
 
@@ -157,8 +166,14 @@ namespace Assets.Framework.TokenEngine
                 
                 if(token != null)
                 {
+                    //Statistics
+                    tokenStatistics.TokenIdentification(true);
+
                     //Calculate TokenClass
                     token.ComputeTokenClass(ClassComputeRefSystem, ClassComputeDimension);
+
+                    tokenStatistics.TokenClassRecognition(token.Class);
+                    
                     //Cluster Identification succesfull
                     //Set Token ID
                     token.SetTokenId(GetFirstAvailableTokenId());
@@ -179,6 +194,7 @@ namespace Assets.Framework.TokenEngine
                 }
                 else
                 {
+                    tokenStatistics.TokenIdentification(false);
                     //Cluser Identification failed, need to report back to CM
                     LaunchTokenIdentified(new InternalTokenIdentifiedEventArgs(cluster.Hash, false));
 

@@ -13,6 +13,7 @@ namespace Assets.Framework.TokenEngine
         internal readonly float DistanceOriginAxisMarkersPX;
         internal readonly float DataMarkerOriginPositionPX;
         internal readonly float DataGridMarkersStepPX;
+        internal readonly float TokenDiagonalPX;
 
         internal readonly Dictionary<TokenDataGridCoord, int> TokenClassLUT;
 
@@ -24,6 +25,7 @@ namespace Assets.Framework.TokenEngine
             DistanceOriginAxisMarkersPX = SetOriginToAxisDistance();
             DataMarkerOriginPositionPX = SetDataMarkerOriginPosition();
             DataMarkerOriginPositionCM = SetDataMarkerOriginPositionCM();
+            TokenDiagonalPX = SetTokenDiagonal();
 
             TokenClassLUT = InitiliazeTokenClassLUT();
 
@@ -43,6 +45,7 @@ namespace Assets.Framework.TokenEngine
         internal abstract float SetOriginToAxisDistance();
         internal abstract float SetDataMarkerOriginPosition();
         internal abstract float SetDataMarkerOriginPositionCM();
+        internal abstract float SetTokenDiagonal();
         internal abstract Dictionary<TokenDataGridCoord, int> InitiliazeTokenClassLUT();
 
     }

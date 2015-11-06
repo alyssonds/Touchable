@@ -8,6 +8,7 @@ using System.Text;
 using Assets.Framework.Utils;
 using Assets.Framework.MultiTouchManager;
 using UnityEngine;
+using System.Diagnostics;
 
 namespace Assets.Framework.TokenEngine
 {
@@ -16,7 +17,7 @@ namespace Assets.Framework.TokenEngine
         #region Private Fields
 
         private static readonly TokenIdentification _instance = new TokenIdentification();
-        private float orthogonalAngleThreshold = 0.2f;
+        private float orthogonalAngleThreshold = 0.3f;
         #endregion
 
         #region Public Properties
@@ -35,6 +36,9 @@ namespace Assets.Framework.TokenEngine
 
         public InternalToken IdentifyCluster(Cluster cluster)
         {
+            //Start Stop Watch for statistics
+            Stopwatch sw = Stopwatch.StartNew();
+             
             InternalToken token = null;
             //Cluster identification Algorithm
             Dictionary<int, TouchInput> clusterPoints = cluster.Points;
@@ -57,7 +61,7 @@ namespace Assets.Framework.TokenEngine
             if(FindOriginIndex(furthestPointIndexes, originAndDataIndexes, clusterPoints, ref orderedIndexes))
             {
                 //Origin Marker Identified and stored in orderedIndexes[0]
-                if(DistinguishAxisVectors(furthestPointIndexes,clusterPoints, ref orderedIndexes))
+                if (DistinguishAxisVectors(furthestPointIndexes, clusterPoints, ref orderedIndexes))
                 {
                     //Axis markers have been correctly identified
                     //Remaing point is Data Marker
@@ -72,20 +76,26 @@ namespace Assets.Framework.TokenEngine
                                                                                                      markers[orderedIndexes[1]],
                                                                                                      markers[orderedIndexes[2]],
                                                                                                      TokenManager.CurrentTokenType.DistanceOriginAxisMarkersPX);
-
                     //Create Token
                     token = new InternalToken(cluster.Hash, markers);
                     token.SetMeanSquareReferenceSystem(meanSquaredTokenReferenceSystem);
                 }
+                else
+                    throw (new TokenAxisNotDistinguishedException("Could not Distinguish Axis"));
             }
             else
             {
+                //throw (new NoOrthogonalVectorsFoundException("Could not find Orthogonal Vectors"));
                 //No orthogonal vectors found thus no origin, failed identification
                 //For the moment return null, in case consider doing second iteration on second maximum
+                sw.Stop();
+                TokenStatistics.Instance.SetTokenIdentificationTime(sw.ElapsedMilliseconds);
                 return token;
             }
-
+            sw.Stop();
+            TokenStatistics.Instance.SetTokenIdentificationTime(sw.ElapsedMilliseconds);
             return token;
+            
         }
 
         #endregion
@@ -195,4 +205,26 @@ namespace Assets.Framework.TokenEngine
         #endregion
 
     }
+
+    public class NoOrthogonalVectorsFoundException : Exception
+    {
+        public NoOrthogonalVectorsFoundException() { }
+
+        public NoOrthogonalVectorsFoundException(string msg)
+            : base(msg)
+        {   
+        }
+    }
+
+    public class TokenAxisNotDistinguishedException : Exception
+    {
+        public TokenAxisNotDistinguishedException() { }
+
+        public TokenAxisNotDistinguishedException(string msg)
+            : base(msg)
+        {
+        }
+    }
+
+
 }

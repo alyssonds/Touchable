@@ -11,6 +11,7 @@ public class ApplicationToken1 : MonoBehaviour , IApplicationToken {
 
     private Transform myTransform;
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D collider2d;
 
     private Vector3 tokenPosition;
 
@@ -32,17 +33,31 @@ public class ApplicationToken1 : MonoBehaviour , IApplicationToken {
         tm = TokenManager.Instance;
     }
 
-	// Use this for initialization
-	void Start () {
-
+    void OnEnable()
+    {
         tm.TokenPlacedOnScreen += OnTokenPlacedOnScreen;
         tm.TokenRemovedFromScreen += OnTokenRemovedFromScreen;
         tm.ScreenTokenUpdated += OnTokenUpdated;
+    }
+
+	// Use this for initialization
+	void Start () {
 
         myTransform = transform;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         spriteRenderer.enabled = false;
+
+        collider2d = GetComponent<BoxCollider2D>();
+        if (collider2d != null)
+            collider2d.enabled = false;
+    }
+
+    void OnDisable()
+    {
+        tm.TokenPlacedOnScreen -= OnTokenPlacedOnScreen;
+        tm.TokenRemovedFromScreen -= OnTokenRemovedFromScreen;
+        tm.ScreenTokenUpdated -= OnTokenUpdated;
     }
 
     public int GetTokenClass()
@@ -56,12 +71,17 @@ public class ApplicationToken1 : MonoBehaviour , IApplicationToken {
         myTransform.position = Camera.main.ScreenToWorldPoint(tokenPosition);
         myTransform.rotation = Quaternion.Euler(myTransform.rotation.x, myTransform.rotation.y, e.Token.Angle);
         spriteRenderer.enabled = true;
-        
+
+        if (collider2d != null)
+            collider2d.enabled = true;
+
     }
 
     public void OnTokenRemovedFromScreen(object sender, ApplicationTokenEventArgs e)
     {
         spriteRenderer.enabled = false;
+        if (collider2d != null)
+            collider2d.enabled = false;
     }
 
     public void OnTokenUpdated(object sender, ApplicationTokenEventArgs e)

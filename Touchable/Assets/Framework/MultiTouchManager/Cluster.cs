@@ -103,27 +103,34 @@ namespace Assets.Framework.MultiTouchManager
             {
                 //Point has moved out of the cluster
                 //Handle current Cluster
-                _pointsIds.Remove(touchId);
-                _points.Remove(touchId);
 
-                if (_state == ClusterState.Identidied || _state == ClusterState.Updated)
-                {
-                    _state = ClusterState.Cancelled;
-                    _cancelledHash = this.Hash;
-                    _cancelledPointsIds.Add(touchId);
-                }
+                //If it was just one point then we must cancel the cluster!!!!!!
+         //       if (_pointsIds.Count != 1)
+         //       {
+                    _pointsIds.Remove(touchId);
+                    _points.Remove(touchId);
 
-                else if (State == ClusterState.Cancelled)
-                    _cancelledPointsIds.Add(touchId);
+                    if (_state == ClusterState.Identidied || _state == ClusterState.Updated)
+                    {
+                        _state = ClusterState.Cancelled;
+                        _cancelledHash = this.Hash;
+                        _cancelledPointsIds.Add(touchId);
+                    }
 
-                else if (_pointsIds.Count == 4)
-                    _state = ClusterState.Unidentified;
+                    else if (State == ClusterState.Cancelled)
+                        _cancelledPointsIds.Add(touchId);
 
-                else
-                    _state = ClusterState.Invalid;
+                    else if (_pointsIds.Count == 4)
+                        _state = ClusterState.Unidentified;
 
-                //Update new Hash
-                this.Hash = ClusterUtils.GetPointsHash(_pointsIds.ToArray<int>());
+                    else
+                        _state = ClusterState.Invalid;
+
+                    //Update new Hash
+                    this.Hash = ClusterUtils.GetPointsHash(_pointsIds.ToArray<int>());
+         //       }
+        //        else
+                
 
                 newCluster = new Cluster(InternalTouches.List[touchId]);
 
@@ -206,6 +213,7 @@ namespace Assets.Framework.MultiTouchManager
 
         private string _cancelledHash;
         private HashSet<int> _cancelledPointsIds = new HashSet<int>();
+
         #endregion
     }
     

@@ -8,6 +8,7 @@ using Assets.Framework;
 public class TokenEngine : MonoBehaviour
 {
     public int TokenType;
+    public bool ForceClusterThreshold;
     public float ClusterThreshold = 200f;
     public bool Target60FPS = true;
     public bool TokenManagerEnabled;
@@ -21,9 +22,8 @@ public class TokenEngine : MonoBehaviour
     void Awake()
     {
         Debug.Log("Token Engine Awake");
-        ClusterManager.Instance.Initialize().SetClusterDistThreshold(ClusterThreshold);
-        if(TokenManagerEnabled)
-            TokenManager.Instance.Initialize();
+        ClusterManager.Instance.Initialize();
+        
 
         switch (TokenType)
         {
@@ -37,6 +37,11 @@ public class TokenEngine : MonoBehaviour
                 TokenManager.Instance.SetApplicationTokenType(new Token5x5());
                 break;
         }
+
+        if (ForceClusterThreshold)
+            ClusterManager.Instance.SetClusterDistThreshold(ClusterThreshold);
+        if (TokenManagerEnabled)
+            TokenManager.Instance.Initialize();
 
         TokenManager.Instance.SetClassComputeReferenceSystem(MeanSquare);
         TokenManager.Instance.SetClassComputeDimensions(ComputePixels);

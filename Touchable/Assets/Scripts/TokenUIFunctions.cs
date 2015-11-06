@@ -2,6 +2,7 @@
 using System.Collections;
 using Assets.Framework.TokenEngine;
 using UnityEngine.UI;
+using Assets.Framework.Utils;
 
 public class TokenUIFunctions : MonoBehaviour {
 
@@ -38,5 +39,10 @@ public class TokenUIFunctions : MonoBehaviour {
     public void EnableClassComputeDimensions(bool value)
     {
         TokenManager.Instance.SetClassComputeDimensions(value);
+    }
+
+    public void SetExpectedTokenClass(int selectedClass)
+    {
+        TokenStatistics.Instance.ExpectedTokenClass = selectedClass;
     }
 }

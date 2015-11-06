@@ -29,6 +29,11 @@ namespace Assets.Framework.TokenEngine.TokenTypes
             return TokenAttributes.TOKEN_3X3_DATA_MARKER_ORIGIN;
         }
 
+        internal override float SetTokenDiagonal()
+        {
+            return ScreenUtils.CmToPixels(TokenAttributes.TOKEN_3X3_DIAGONAL);
+        }
+
         internal override Dictionary<TokenDataGridCoord, int> InitiliazeTokenClassLUT()
         {
             Dictionary<TokenDataGridCoord, int> classLUT = new Dictionary<TokenDataGridCoord, int>();
